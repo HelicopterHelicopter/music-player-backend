@@ -10,6 +10,7 @@ export const getAllBucketObjects = async(req:Request,res:Response,next:NextFunct
         const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
         const region = process.env.S3_REGION;
         const Bucket = process.env.S3_BUCKET;
+        console.log(accessKeyId);
         const client = new S3Client({
             credentials:{
                 accessKeyId,
@@ -40,6 +41,7 @@ export const generatePresignedUrl = async (req:Request,res:Response,next:NextFun
         const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
         const region = process.env.S3_REGION;
         const Bucket = process.env.S3_BUCKET;
+
         const client = new S3Client({
             credentials:{
                 accessKeyId,
