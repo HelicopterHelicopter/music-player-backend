@@ -1,7 +1,7 @@
-import axios from "axios";
+
 import { NextFunction,Request,Response } from "express";
 import { GetYTSearchResults } from "../utils/youtube-api-communicator";
-
+import ytdl from "ytdl-core";
 export const searchYT = async (req:Request,res:Response,next:NextFunction) => {
     try{
         const searchKeyword = req.query.searchKeyword as string;
@@ -9,7 +9,7 @@ export const searchYT = async (req:Request,res:Response,next:NextFunction) => {
 
         if(apiResponse.items && apiResponse.items.length>0){
             const data = apiResponse.items.map((item)=>({
-                videoId:item.id.videoId,
+                url:"https://www.youtube.com/watch?v=oMZHqoZojZ0"+item.id.videoId,
                 title:item.snippet.title,
                 thumbnail:item.snippet.thumbnails.default.url
             }));
@@ -17,5 +17,21 @@ export const searchYT = async (req:Request,res:Response,next:NextFunction) => {
         }
     }catch(e){
         return res.status(200).json({message:"ERROR",cause:e.message});
+    }
+}
+
+export const ytStreamer = async(req:Request, res:Response,next:NextFunction) => {
+    try{
+        const videoId = req.query.url as string;
+        console.log(videoId);
+        //const info  = await ytdl.getInfo(videoId);
+        
+        res.setHeader('Content-Type',"video/mp4");
+        res.setHeader('Accept-Ranges',"bytes");
+
+        ytdl(videoId).pipe(res);
+    }catch(e){
+        console.log('Error',e);
+        res.status(500).json({message:"ERROR",cause:e.message});
     }
 }
