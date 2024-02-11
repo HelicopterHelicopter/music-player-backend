@@ -30,7 +30,7 @@ export const getAllBucketObjects = async(req:Request,res:Response,next:NextFunct
         
         
     }catch(e){
-       
+        console.log(e);
         return res.status(200).json({message:"ERROR",cause:e.Message});
     }
 }
