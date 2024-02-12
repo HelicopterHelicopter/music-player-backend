@@ -2,8 +2,9 @@
 import { NextFunction,Request,Response } from "express";
 import { GetYTSearchResults } from "../utils/youtube-api-communicator";
 import ytdl, { validateID } from "ytdl-core";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 const fs = require('fs');
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 export const searchYT = async (req:Request,res:Response,next:NextFunction) => {
     try{
@@ -70,7 +71,11 @@ export const getYtPresignedUrl = async(req:Request,res:Response) => {
 
         const data = await client.send(command);
         if(data.$metadata.httpStatusCode===200){
-            return res.status(200).json({message:"OK",body:data.ETag});
+
+            const preSignCmd = new GetObjectCommand({Bucket:Bucket,Key:`${videoId}.mp4`});
+            const presignedUrlResponse = await getSignedUrl(client,preSignCmd,{expiresIn:6000});
+
+            return res.status(200).json({message:"OK",body:presignedUrlResponse});
         }else{
             return res.status(200).json({message:"ERROR",httpStatusCode:data.$metadata.httpStatusCode});
         }
