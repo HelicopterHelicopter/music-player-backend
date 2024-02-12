@@ -1,8 +1,8 @@
 
 import { NextFunction,Request,Response } from "express";
 import { GetYTSearchResults } from "../utils/youtube-api-communicator";
-import ytdl from "ytdl-core";
-import { S3Client } from "@aws-sdk/client-s3";
+import ytdl, { validateID } from "ytdl-core";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 const fs = require('fs');
 
 export const searchYT = async (req:Request,res:Response,next:NextFunction) => {
@@ -41,14 +41,18 @@ export const ytStreamer = async(req:Request, res:Response,next:NextFunction) => 
 
 export const getYtPresignedUrl = async(req:Request,res:Response) => {
     try{
-        const videoId = req.query.videoId as String;
+        const videoId = req.query.videoId as string;
+
+        if(!validateID(videoId)){
+            return res.status(400).json({message:"BAD REQUEST"});
+        }
 
         ytdl(`https://www.youtube.com/watch?v=${videoId}`).pipe(fs.createWriteStream(`${videoId}.mp4`));
 
         const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
         const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
         const region = process.env.S3_REGION;
-        const Bucket = process.env.S3_BUCKET;
+        const Bucket = process.env.S3_YT_BUCKET;
 
         const client = new S3Client({
             credentials:{
@@ -57,7 +61,22 @@ export const getYtPresignedUrl = async(req:Request,res:Response) => {
             },
             region
         });
+
+        const command = new PutObjectCommand({
+            Bucket:Bucket,
+            Key:`${videoId}.mp4`,
+            Body:fs.createReadStream(`${videoId}.mp4`)
+        });
+
+        const data = await client.send(command);
+        if(data.$metadata.httpStatusCode===200){
+            return res.status(200).json({message:"OK",body:data.ETag});
+        }else{
+            return res.status(200).json({message:"ERROR",httpStatusCode:data.$metadata.httpStatusCode});
+        }
+
     }catch(e){
         console.log(e);
+        return res.status(500).json({message:"ERROR",cause:e});
     }
 }
