@@ -13,7 +13,7 @@ export const searchYT = async (req:Request,res:Response,next:NextFunction) => {
 
         if(apiResponse.items && apiResponse.items.length>0){
             const data = apiResponse.items.map((item)=>({
-                url:"https://www.youtube.com/watch?v="+item.id.videoId,
+                url:"music.jheel.org:5000/api/v1/yt/play?videoId="+item.id.videoId,
                 title:item.snippet.title,
                 thumbnail:item.snippet.thumbnails.default.url
             }));
@@ -29,7 +29,9 @@ export const ytStreamer = async(req:Request, res:Response,next:NextFunction) => 
         const videoId = req.query.videoId as string;
         console.log(videoId);
         //const info  = await ytdl.getInfo(videoId);
-        
+        if(!validateID(videoId)){
+            return res.status(400).json({message:"BAD REQUEST"});
+        }
         res.setHeader('Content-Type',"video/mp4");
         res.setHeader('Accept-Ranges',"bytes");
 
