@@ -32,10 +32,12 @@ export const ytStreamer = async(req:Request, res:Response,next:NextFunction) => 
         if(!validateID(videoId)){
             return res.status(400).json({message:"BAD REQUEST"});
         }
+        const info = await ytdl.getInfo(videoId);
         res.setHeader('Content-Type',"video/mp4");
         res.setHeader('Accept-Ranges',"bytes");
-
-        ytdl(`https://www.youtube.com/watch?v=${videoId}`).pipe(res);
+        const format = ytdl.chooseFormat(info.formats,{quality:18});
+        
+        ytdl(`https://www.youtube.com/watch?v=${videoId}`,{format:format}).pipe(res);
     }catch(e){
         console.log('Error',e);
         res.status(500).json({message:"ERROR",cause:e.message});
